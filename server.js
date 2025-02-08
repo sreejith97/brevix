@@ -45,6 +45,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const indexRoutes = require("./routes/indexRoutes");
 const redirectionRoutes = require("./routes/redirectingRoutes")
 
+
 app.use("/", indexRoutes);
 app.use("/auth", authRoutes);
 app.use("/api", urlRoutes);

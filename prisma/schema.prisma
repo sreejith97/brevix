@@ -14,14 +14,18 @@ datasource db {
 }
 
 model User {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  googleId     String        @unique
-  displayName  String
-  email        String        @unique
-  createdAt    DateTime      @default(now())
-  shortenedUrls ShortenedUrl[] 
-  analytics    Analytics[]    
-  topics       Topic[]       
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  googleId        String        @unique
+  displayName     String
+  email           String        @unique
+  createdAt       DateTime      @default(now())
+  shortenedUrls   ShortenedUrl[] 
+  analytics       Analytics[]    
+  topics          Topic[]       
+  
+  totalShortUrls  Int           @default(0)
+  totalClicks     Int           @default(0)
+  totalUniqueUsers Int          @default(0)
 }
 
 model Topic {
@@ -43,13 +47,14 @@ model ShortenedUrl {
   userId      String       @db.ObjectId
   user        User         @relation(fields: [userId], references: [id]) 
   analytics   Analytics[] 
-  
+  osanalytics OSAnalytics[]
+  deviceanalytics DeviceAnalytics[]
+  clickanalyticsbydate ClickAnalyticsByDate[]
   totalClicks Int         @default(0)  
   uniqueUsers Int         @default(0)  
 
   topic       Topic?      @relation(fields: [topicId], references: [id]) 
 }
-
 
 
 model Analytics {
@@ -64,31 +69,31 @@ model Analytics {
   userId        String?  @db.ObjectId 
   shortUrlId    String   @db.ObjectId 
   shortUrlRel   ShortenedUrl @relation(fields: [shortUrlId], references: [id])
-
-
   user          User?    @relation(fields: [userId], references: [id])
 }
 
 
 
 model OSAnalytics {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  shortUrlId  String   @db.ObjectId
-  osName      String
-  uniqueClicks Int     @default(0)
-  uniqueUsers Int      @default(0)
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortUrlId   String   @db.ObjectId
+  osName       String
+  uniqueClicks Int      @default(0)
+  uniqueUsers  Int      @default(0)
+  shortUrlRel  ShortenedUrl @relation(fields: [shortUrlId], references: [id])
 
-  @@unique([shortUrlId, osName]) 
+  @@unique([shortUrlId, osName])
 }
 
 model DeviceAnalytics {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  shortUrlId  String   @db.ObjectId
-  deviceName  String
-  uniqueClicks Int     @default(0)
-  uniqueUsers Int      @default(0)
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortUrlId   String   @db.ObjectId
+  deviceName   String
+  uniqueClicks Int      @default(0)
+  uniqueUsers  Int      @default(0)
+  shortUrlRel  ShortenedUrl @relation(fields: [shortUrlId], references: [id])
 
-  @@unique([shortUrlId, deviceName])
+  @@unique([shortUrlId, deviceName]) 
 }
 
 model ClickAnalyticsByDate {
@@ -97,6 +102,7 @@ model ClickAnalyticsByDate {
   date        DateTime @default(now())
   clickCount  Int      @default(0)
   uniqueUsers Int      @default(0)
+  shortUrlRel ShortenedUrl @relation(fields: [shortUrlId], references: [id])
 
   @@unique([shortUrlId, date]) 
 }

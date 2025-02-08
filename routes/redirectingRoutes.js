@@ -11,14 +11,16 @@ const redis = new Redis();
 
 async function trackAnalyticsAndClicks(req, alias) {
   try {
+
     const urlData = await prisma.shortenedUrl.findFirst({
       where: { customAlias: alias },
-      include: { analytics: true }, 
+      include: { user: true },
     });
 
     if (!urlData) return console.log(`Short URL not found for alias: ${alias}`);
 
     const timestamp = new Date();
+    const dateStr = timestamp.toISOString().split("T")[0]; 
     const agent = useragent.parse(req.headers['user-agent']);
     const osType = agent.os.toString();
     const deviceType = agent.device.toString();
@@ -28,15 +30,11 @@ async function trackAnalyticsAndClicks(req, alias) {
     const geoLoc = geoip.lookup(ip);
     const location = geoLoc ? `${geoLoc.city}, ${geoLoc.country}` : 'Unknown';
 
-  
-    const existingClick = await prisma.analytics.findFirst({
-      where: {
-        shortUrlId: urlData.id,
-        OR: [{ ipAddress: ip }, { deviceType: deviceType }],
-      },
+    const uniqueClickCount = await prisma.analytics.count({
+      where: { shortUrlId: urlData.id, ipAddress: ip },
     });
 
-    const isUniqueClick = !existingClick; 
+    const isUniqueClick = uniqueClickCount === 0; 
 
     await prisma.analytics.create({
       data: {
@@ -51,40 +49,103 @@ async function trackAnalyticsAndClicks(req, alias) {
       },
     });
 
-    if (isUniqueClick) {
-      await prisma.shortenedUrl.update({
-        where: { id: urlData.id },
+    // console.log(`Click recorded : ${alias}, Unique: ${isUniqueClick}`);
+
+    await prisma.shortenedUrl.update({
+      where: { id: urlData.id },
+      data: {
+        totalClicks: { increment: 1 },
+        uniqueUsers: isUniqueClick ? { increment: 1 } : undefined, 
+      },
+    });
+
+    await Promise.all([
+      prisma.oSAnalytics.upsert({
+        where: { shortUrlId_osName: { shortUrlId: urlData.id, osName: osType } },
+        update: {
+          uniqueClicks: { increment: 1 },
+          uniqueUsers: isUniqueClick ? { increment: 1 } : undefined,
+        },
+        create: {
+          shortUrlId: urlData.id,
+          osName: osType,
+          uniqueClicks: 1,
+          uniqueUsers: isUniqueClick ? 1 : 0,
+        },
+      }),
+
+      prisma.deviceAnalytics.upsert({
+        where: { shortUrlId_deviceName: { shortUrlId: urlData.id, deviceName: deviceType } },
+        update: {
+          uniqueClicks: { increment: 1 },
+          uniqueUsers: isUniqueClick ? { increment: 1 } : undefined,
+        },
+        create: {
+          shortUrlId: urlData.id,
+          deviceName: deviceType,
+          uniqueClicks: 1,
+          uniqueUsers: isUniqueClick ? 1 : 0,
+        },
+      }),
+
+      prisma.clickAnalyticsByDate.upsert({
+        where: { shortUrlId_date: { shortUrlId: urlData.id, date: new Date(dateStr) } },
+        update: {
+          clickCount: { increment: 1 },
+          uniqueUsers: isUniqueClick ? { increment: 1 } : undefined,
+        },
+        create: {
+          shortUrlId: urlData.id,
+          date: new Date(dateStr),
+          clickCount: 1,
+          uniqueUsers: isUniqueClick ? 1 : 0,
+        },
+      })
+    ]);
+
+    if (urlData.user.id) {
+      const userId = urlData.user.id;
+
+      const [totalClicks, totalUniqueUsers, totalShortUrls] = await Promise.all([
+        prisma.shortenedUrl.aggregate({
+          where: { userId },
+          _sum: { totalClicks: true },
+        }),
+        prisma.shortenedUrl.aggregate({
+          where: { userId },
+          _sum: { uniqueUsers: true },
+        }),
+        prisma.shortenedUrl.count({ where: { userId } }),
+      ]);
+
+      await prisma.user.update({
+        where: { id: userId },
         data: {
-          totalClicks: { increment: 1 },
-          uniqueUsers: { increment: 1 },
+          totalShortUrls: totalShortUrls,
+          totalClicks: totalClicks._sum.totalClicks || 0,
+          totalUniqueUsers: totalUniqueUsers._sum.uniqueUsers || 0,
         },
       });
 
-      console.log(` Unique click : ${alias}`);
-    } else {
-      console.log(` Duplicate click detected.`);
+      // console.log(`Updated user (${userId}) Data.`);
     }
   } catch (error) {
-    console.error("Error and updating unique clicks:", error);
+    console.error("Error in tracking analytics:", error);
   }
 }
-
 
 router.get('/:alias', async (req, res) => {
   try {
     const { alias } = req.params;
-
     console.log(`Received request for alias: ${alias}`);
 
-  
     let cachedUrl = await redis.get(`shortUrl:${alias}`);
     if (cachedUrl) {
       console.log("Cache hit! Redirecting to:", cachedUrl);
-
       await trackAnalyticsAndClicks(req, alias);
-
       return res.redirect(cachedUrl);
     }
+
     const urlData = await prisma.shortenedUrl.findFirst({
       where: { customAlias: alias },
     });
@@ -97,12 +158,10 @@ router.get('/:alias', async (req, res) => {
     console.log(`URL found: ${urlData.longUrl}`);
 
     await redis.setex(`shortUrl:${alias}`, 86400, urlData.longUrl);
-
     await trackAnalyticsAndClicks(req, alias);
-
     res.redirect(urlData.longUrl);
   } catch (error) {
-    console.error("Error in redirect route: ", error);
+    console.error("Error in redirect route:", error);
     res.status(500).send("Internal Server Error");
   }
 });

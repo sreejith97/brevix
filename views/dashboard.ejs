@@ -59,10 +59,18 @@
                             <td><a href="<%= url.shortUrl %>" target="_blank"><%= url.shortUrl %></a></td>
                             <td><a href="<%= url.longUrl %>" target="_blank"><%= url.longUrl %></a></td>
                             <td><%= url.customAlias %></td>
-                            <td><%= url.topic? url.topic?.name : "null" %></td>
+                            <td>
+                                <% if (url.topic) { %>
+                                  <a target="_blank" href="/analytics/topic/<%= url.topic.id %>"><%= url.topic.name %></a>
+                                <% } else { %>
+                                  Default
+                                <% } %>
+                              </td>
+                              
+                              
                             <td><%= new Date(url.createdAt).toLocaleString()  %></td>
                             <td><%= url.totalClicks ? url.totalClicks : 0 %></td>
-                            <td>Click
+                            <td><a target="_blank" href="/analytics/<%= url.customAlias %>">Click</a>
                                 <!-- <a href="/api/analytics/date/<%= url.customAlias %>" class="btn btn-info btn-sm">View Date Analytics</a>
                                 <a href="/api/analytics/os/<%= url.customAlias %>" class="btn btn-info btn-sm">View OS Analytics</a>
                                 <a href="/api/analytics/device/<%= url.customAlias %>" class="btn btn-info btn-sm">View Device Analytics</a> -->
@@ -90,33 +98,36 @@
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ longUrl, topic }) 
+            body: JSON.stringify({ longUrl, topic, customAlias }) 
         });
 
-        if (!response.ok) {
-            throw new Error('Failed to shorten URL');
-        }
-
+        
         const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data?.error);
+        }
+        
+        
         const shortUrl = data.shortUrl;
         const totalClicks = data.totalClicks; 
-        const customAlias = data.customAlias;
+    
         const tableBody = document.getElementById('urlTable');
         const newRow = document.createElement('tr');
         newRow.innerHTML = `
             <td><a href="${shortUrl}" target="_blank">${shortUrl}</a></td>
             <td><a href="${longUrl}" target="_blank">${longUrl}</a></td>
-            <td>${customAlias || 'null'}</td>
-            <td>${topic || 'null'}</td>
-            <td>${totalClicks}</td> <!-- Using the totalClicks from the server -->
-            <td>0</td>
-            <td>click</td>
+            <td>${customAlias? customAlias : "null"}</td>
+            <td>${topic? topic : "null"}</td>
+            <td>${new Date(data.createdAt).toLocaleString()}</td>
+            <td>0</td> 
+            <td><a target="_blank" href="/analytics/${data?.customAlias}">Click</a></td>
         `;
         tableBody.appendChild(newRow);
 
         document.getElementById('shortenForm').reset();
     } catch (error) {
-        alert('Error shortening URL: ' + error.message);
+        alert('Error shortening URL: ' + error);
     }
 });
 
