@@ -1,21 +1,22 @@
-
 const express = require('express');
 const cron = require('node-cron');
-const fetch = require('node-fetch'); // Import node-fetch for making API calls
+const axios = require('axios');
 const router = express.Router();
 
-// Schedule a task to run every 3 minutes
 cron.schedule('*/3 * * * *', async () => {
   try {
-   
-    const response = await fetch(process.env.CRON_URL_TEST);
-    const data = await response.json();
+      console.log(`Current Date and Time (UTC): ${new Date().toLocaleString()}`);
+      if (!process.env.CRON_URL_TEST) {
+          throw new Error('CRON_URL_TEST environment variable is not set');
+       
+    }
+
+    const response = await axios.get(process.env.CRON_URL_TEST);
 
 
-    console.log(`API Call Successful: ${new Date().toLocaleString()}`);
-    console.log(`Current Date and Time (UTC): ${data.utc_datetime}`);
+    console.log(`Current Date and Time (UTC): ${response.data.utc_datetime}`);
   } catch (error) {
-    console.error('Error calling the API:', error);
+    console.error('Error calling the API:', error.message);
   }
 });
 
