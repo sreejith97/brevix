@@ -42,6 +42,7 @@ const urlRoutes = require("./routes/urlRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
 const indexRoutes = require("./routes/indexRoutes");
 const redirectionRoutes = require("./routes/redirectingRoutes")
+const cronRoute = require("./routes/cronRoute")
 
 
 app.use("/", indexRoutes);
@@ -49,6 +50,7 @@ app.use("/auth", authRoutes);
 app.use("/api", urlRoutes);
 app.use("/", redirectionRoutes);
 app.use("/analytics", analyticsRoutes)
+app.use('/cron', cronRoute); 
 
 
 app.listen(5000, () => {

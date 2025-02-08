@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-
     "start": "nodemon server.js"
   },
   "keywords": [],
@@ -23,6 +22,8 @@
     "ioredis": "^5.5.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.0",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
     "nodemon": "^3.1.9",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
