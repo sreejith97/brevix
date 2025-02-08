@@ -52,6 +52,6 @@ app.use("/", redirectionRoutes);
 app.use("/analytics", analyticsRoutes)
 
 
-app.listen(5001, () => {
-  console.log(`Server is running at http://localhost:5001`);
+app.listen(5000, () => {
+  console.log(`Server is running at http://localhost:5000`);
 });
