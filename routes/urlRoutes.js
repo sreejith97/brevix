@@ -4,8 +4,7 @@ const { PrismaClient } = require("@prisma/client");
 const Redis = require("ioredis");
 
 const prisma = new PrismaClient();
-const redis = new Redis();
-
+const redis = new Redis(process.env.REDIS_URI)
 router.post("/shorten", async (req, res) => {
   if (!req.user) return res.status(401).send("Unauthorized");
 

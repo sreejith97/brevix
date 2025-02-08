@@ -7,7 +7,8 @@ const requestIp = require('request-ip');
 const geoip = require('geoip-lite');
 
 const prisma = new PrismaClient();
-const redis = new Redis();
+const redis = new Redis(process.env.REDIS_URI)
+
 
 async function trackAnalyticsAndClicks(req, alias) {
   try {

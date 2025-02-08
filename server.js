@@ -9,9 +9,7 @@ const path = require("path");
 require("./config/passport"); 
 
 const app = express();
-const redis = new Redis();
-
-
+const redis = new Redis(process.env.REDIS_URI)
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
