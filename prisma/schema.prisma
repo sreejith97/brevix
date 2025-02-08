@@ -69,3 +69,34 @@ model Analytics {
   user          User?    @relation(fields: [userId], references: [id])
 }
 
+
+
+model OSAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortUrlId  String   @db.ObjectId
+  osName      String
+  uniqueClicks Int     @default(0)
+  uniqueUsers Int      @default(0)
+
+  @@unique([shortUrlId, osName]) 
+}
+
+model DeviceAnalytics {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortUrlId  String   @db.ObjectId
+  deviceName  String
+  uniqueClicks Int     @default(0)
+  uniqueUsers Int      @default(0)
+
+  @@unique([shortUrlId, deviceName])
+}
+
+model ClickAnalyticsByDate {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  shortUrlId  String   @db.ObjectId
+  date        DateTime @default(now())
+  clickCount  Int      @default(0)
+  uniqueUsers Int      @default(0)
+
+  @@unique([shortUrlId, date]) 
+}

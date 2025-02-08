@@ -1,21 +1,24 @@
+require("dotenv").config();
 const express = require("express");
 const passport = require("passport");
 const session = require("express-session");
+const rateLimit = require("express-rate-limit");
+const Redis = require("ioredis");
 const path = require("path");
 
-const rateLimit = require("express-rate-limit");
+require("./config/passport"); 
+
 const app = express();
+const redis = new Redis();
 
-app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
-
-app.use(express.json());
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
   max: 5,
   message: "Too many requests, please try again later.",
 });
+app.use("/api/shorten", limiter);
+
 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
@@ -32,14 +35,23 @@ app.use(
   })
 );
 
-
 app.use(passport.initialize());
 app.use(passport.session());
 
+
+const authRoutes = require("./routes/authRoutes");
+const urlRoutes = require("./routes/urlRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 const indexRoutes = require("./routes/indexRoutes");
+const redirectionRoutes = require("./routes/redirectingRoutes")
+
 app.use("/", indexRoutes);
+app.use("/auth", authRoutes);
+app.use("/api", urlRoutes);
+app.use("/", redirectionRoutes);
+app.use("/analytics", analyticsRoutes)
 
 
 app.listen(5001, () => {
-    console.log(`Server is running at http://localhost:5001`);
-  });
+  console.log(`Server is running at http://localhost:5001`);
+});

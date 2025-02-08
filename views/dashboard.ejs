@@ -18,11 +18,108 @@
             <p>Email: <%= user.email %></p>
         </div>
 
-       
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Shorten a URL</h5>
+                <form id="shortenForm">
+                    <div class="mb-3">
+                        <label for="longUrl" class="form-label">Enter Long URL</label>
+                        <input type="url" class="form-control" id="longUrl" name="longUrl" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customAlias" class="form-label">Custom Alias (optional)</label>
+                        <input type="text" class="form-control" id="customAlias" name="customAlias">
+                    </div>
+                    <div class="mb-3">
+                        <label for="topic" class="form-label">Topic (optional)</label>
+                        <input type="text" class="form-control" id="topic" name="topic">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Shorten</button>
+                </form>
+            </div>
+        </div>
 
-        
+        <div class="mt-4">
+            <h5>Your Shortened URLs</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Short URL</th>
+                        <th>Original URL</th>
+                        <th>Alias</th>
+                        <th>Topic</th>
+                        <th>Created On</th>
+                        <th>Clicks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="urlTable">
+                    <% user.shortenedUrls.forEach(url => { %>
+                        <tr>
+                            <td><a href="<%= url.shortUrl %>" target="_blank"><%= url.shortUrl %></a></td>
+                            <td><a href="<%= url.longUrl %>" target="_blank"><%= url.longUrl %></a></td>
+                            <td><%= url.customAlias %></td>
+                            <td><%= url.topic? url.topic?.name : "null" %></td>
+                            <td><%= new Date(url.createdAt).toLocaleString()  %></td>
+                            <td><%= url.totalClicks ? url.totalClicks : 0 %></td>
+                            <td>Click
+                                <!-- <a href="/api/analytics/date/<%= url.customAlias %>" class="btn btn-info btn-sm">View Date Analytics</a>
+                                <a href="/api/analytics/os/<%= url.customAlias %>" class="btn btn-info btn-sm">View OS Analytics</a>
+                                <a href="/api/analytics/device/<%= url.customAlias %>" class="btn btn-info btn-sm">View Device Analytics</a> -->
+                            </td>
+                        </tr>
+                    <% }); %>
+                </tbody>
+            </table>
+        </div>
     </div>
 
+    <script>
+ 
+ document.getElementById('shortenForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const longUrl = document.getElementById('longUrl').value;
+    const customAlias = document.getElementById('customAlias').value;
+    const topic = document.getElementById('topic').value;
 
+    try {
+       
+        const response = await fetch('/api/shorten', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ longUrl, topic }) 
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to shorten URL');
+        }
+
+        const data = await response.json();
+        const shortUrl = data.shortUrl;
+        const totalClicks = data.totalClicks; 
+        const customAlias = data.customAlias;
+        const tableBody = document.getElementById('urlTable');
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td><a href="${shortUrl}" target="_blank">${shortUrl}</a></td>
+            <td><a href="${longUrl}" target="_blank">${longUrl}</a></td>
+            <td>${customAlias || 'null'}</td>
+            <td>${topic || 'null'}</td>
+            <td>${totalClicks}</td> <!-- Using the totalClicks from the server -->
+            <td>0</td>
+            <td>click</td>
+        `;
+        tableBody.appendChild(newRow);
+
+        document.getElementById('shortenForm').reset();
+    } catch (error) {
+        alert('Error shortening URL: ' + error.message);
+    }
+});
+
+ </script>
 </body>
 </html>

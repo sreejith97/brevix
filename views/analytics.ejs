@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Analytics for <%= shortUrl %></h1>
+        <a href="/dashboard" class="btn">Go to Dashboard</a>
+    </header>
+
+    <section>
+        <h2>Total Clicks: <%= totalClicks %></h2>
+        <h3>Unique Users: <%= uniqueUsers %></h3>
+
+        <h4>Clicks by Date (Last 7 days)</h4>
+        <ul>
+            <% clicksByDate.forEach(item => { %>
+                <li><%= item.date %>: <%= item.clicks %> clicks</li>
+            <% }) %>
+        </ul>
+
+        <h4>Operating System Breakdown</h4>
+        <ul>
+            <% osType.forEach(os => { %>
+                <li><%= os.os %>: <%= os.clicks %> clicks</li>
+            <% }) %>
+        </ul>
+
+        <h4>Device Breakdown</h4>
+        <ul>
+            <% deviceType.forEach(device => { %>
+                <li><%= device.device %>: <%= device.clicks %> clicks</li>
+            <% }) %>
+        </ul>
+    </section>
+
+  
+</body>
+</html>
