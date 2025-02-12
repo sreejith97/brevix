@@ -12,9 +12,10 @@ cron.schedule('*/3 * * * *', async () => {
     }
 
     const response = await axios.get(process.env.CRON_URL_TEST);
-
-
+    const response2 = await axios.get(process.env.CRON_URL_TEST_TWO)
+    
     console.log(`Current Date and Time (UTC): ${response.data.utc_datetime}`);
+    console.log(`Current Date and Time (UTC): ${response2.data.utc_datetime}`);
   } catch (error) {
     console.error('Error calling the API:', error.message);
   }
